@@ -1,8 +1,5 @@
 import { NextRequest } from "next/server";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 const GET_ROUTES = [
   /^health$/,
   /^agents$/,
@@ -92,4 +89,3 @@ async function proxy(
 
 export const GET = proxy;
 export const POST = proxy;
-
