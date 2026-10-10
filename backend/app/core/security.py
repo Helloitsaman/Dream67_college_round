@@ -10,6 +10,11 @@ from app.core.config import get_settings
 async def require_service_token(authorization: str | None = Header(default=None)) -> None:
     settings = get_settings()
     expected = settings.backend_service_token
+    if settings.production and expected == "dev-agentbreak-token":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Replace the development service token before running in production.",
+        )
     if not expected:
         if settings.production:
             raise HTTPException(
@@ -25,4 +30,3 @@ async def require_service_token(authorization: str | None = Header(default=None)
             detail="Missing or invalid service token.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-

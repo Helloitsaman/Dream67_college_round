@@ -26,6 +26,8 @@ docker compose up --build
 
 Open [http://localhost:3000](http://localhost:3000). The API health endpoint is exposed only on localhost at [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health). MongoDB and Redis are on an internal Compose network and are not published.
 
+The current MVP worker is an in-process asynchronous runner. The internal Redis service is reserved for the documented RQ migration when scans need multi-process durability.
+
 ## Local development
 
 Prerequisites: Node.js 24+, pnpm 11+, Python 3.11–3.13, and optional local/Atlas MongoDB.

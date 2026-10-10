@@ -57,7 +57,7 @@ class ScanRunner:
                 raise ValueError("Run configuration could not be loaded.")
             policy = PolicySet.model_validate(policy_doc)
             case_ids = suite["case_ids"]
-            attempts_per_case = min(max_attempts, 3)
+            attempts_per_case = max(1, max_attempts)
             global_index = 0
             for case_id in case_ids:
                 if run_id in self._cancelled:
@@ -265,4 +265,3 @@ class ScanRunner:
             else:
                 redacted[key] = item
         return redacted
-

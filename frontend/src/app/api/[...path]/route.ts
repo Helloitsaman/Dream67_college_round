@@ -28,7 +28,12 @@ function mutationIsSameOrigin(request: NextRequest): boolean {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && !["same-origin", "same-site", "none"].includes(fetchSite)) return false;
   const origin = request.headers.get("origin");
-  return !origin || new URL(origin).host === request.nextUrl.host;
+  if (!origin) return true;
+  try {
+    return new URL(origin).host === request.nextUrl.host;
+  } catch {
+    return false;
+  }
 }
 
 async function proxy(

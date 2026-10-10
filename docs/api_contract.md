@@ -30,5 +30,4 @@ Example run request:
 }
 ```
 
-`max_attempts_per_case` is validated from 1 through 20. The deterministic MVP executes at most three variations per attack case and one benign control to keep local runs bounded.
-
+`max_attempts_per_case` is validated from 1 through 20. Attack cases honor that bounded budget; benign controls execute once per run.
