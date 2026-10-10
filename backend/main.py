@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 from pymongo.errors import ConfigurationError, OperationFailure, PyMongoError
 from mvp_demo import router as demo_router
+from app.real_scan import router as real_scan_router
 
 # Load environment variables from backend/.env or root .env
 current_dir = Path(__file__).resolve().parent
@@ -70,6 +71,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="AgentBreak Backend API", version="1.0.0", lifespan=lifespan)
 app.include_router(demo_router)
+app.include_router(real_scan_router)
 
 # Enable CORS so Next.js frontend can make API calls without being blocked
 app.add_middleware(
