@@ -1,0 +1,12 @@
+{"action": "send_email", "conditions": {"fixture_only": true, "synthetic_rule": 1}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-01", "severity": "low"}
+{"action": "write_file", "conditions": {"fixture_only": true, "synthetic_rule": 2}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-02", "severity": "medium"}
+{"action": "query_records", "conditions": {"fixture_only": true, "synthetic_rule": 3}, "effect": "allow", "expected_enforcement": "allow", "policy_id": "P-SYN-03", "severity": "high"}
+{"action": "fetch_webpage", "conditions": {"fixture_only": true, "synthetic_rule": 4}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-04", "severity": "critical"}
+{"action": "send_email", "conditions": {"fixture_only": true, "synthetic_rule": 5}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-05", "severity": "low"}
+{"action": "write_file", "conditions": {"fixture_only": true, "synthetic_rule": 6}, "effect": "allow", "expected_enforcement": "allow", "policy_id": "P-SYN-06", "severity": "medium"}
+{"action": "query_records", "conditions": {"fixture_only": true, "synthetic_rule": 7}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-07", "severity": "high"}
+{"action": "fetch_webpage", "conditions": {"fixture_only": true, "synthetic_rule": 8}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-08", "severity": "critical"}
+{"action": "send_email", "conditions": {"fixture_only": true, "synthetic_rule": 9}, "effect": "allow", "expected_enforcement": "allow", "policy_id": "P-SYN-09", "severity": "low"}
+{"action": "write_file", "conditions": {"fixture_only": true, "synthetic_rule": 10}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-10", "severity": "medium"}
+{"action": "query_records", "conditions": {"fixture_only": true, "synthetic_rule": 11}, "effect": "deny", "expected_enforcement": "deny", "policy_id": "P-SYN-11", "severity": "high"}
+{"action": "fetch_webpage", "conditions": {"fixture_only": true, "synthetic_rule": 12}, "effect": "allow", "expected_enforcement": "allow", "policy_id": "P-SYN-12", "severity": "critical"}

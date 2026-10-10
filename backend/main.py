@@ -141,15 +141,10 @@ def list_items(limit: int = 20):
         raise HTTPException(status_code=503, detail=explain(e))
 
 
-if __name__ == "__main__":
-    print("Testing MongoDB connection...")
-    try:
-        test = connect()
-        print(f"SUCCESS: connected. Database '{DB_NAME}', collection '{COLLECTION_NAME}'.")
-        test.close()
-    except Exception as e:
-        print(f"FAILED: {explain(e)}")
-        sys.exit(1)
+# Keep this module as a compatibility launcher while the application lives in
+# app.main. The assignment also makes `uvicorn main:app` serve the new API.
+from app.main import app as app
 
-    print(f"Starting API at http://127.0.0.1:{PORT} (docs at http://127.0.0.1:{PORT}/docs)")
-    uvicorn.run("main:app", host="127.0.0.1", port=PORT, reload=True)
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="127.0.0.1", port=PORT, reload=True)
