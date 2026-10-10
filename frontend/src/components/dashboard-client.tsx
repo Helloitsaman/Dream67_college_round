@@ -27,12 +27,12 @@ export function DashboardClient() {
   useEffect(() => { const initial = window.setTimeout(() => void load(), 0); const timer = window.setInterval(load, 4000); return () => { window.clearTimeout(initial); window.clearInterval(timer); }; }, [load]);
 
   const metrics = useMemo(() => runs.reduce((acc, run) => ({
-    violations: acc.violations + run.summary.verified_executed_violations,
-    blocked: acc.blocked + run.summary.blocked_attempts,
-    attempts: acc.attempts + run.summary.total_attempts,
+    violations: acc.violations + (run.summary?.verified_executed_violations ?? 0),
+    blocked: acc.blocked + (run.summary?.blocked_attempts ?? 0),
+    attempts: acc.attempts + (run.summary?.total_attempts ?? 0),
   }), { violations: 0, blocked: 0, attempts: 0 }), [runs]);
-  const completed = runs.filter((run) => run.status === "completed");
-  const attackRate = completed.length ? Math.round((completed.reduce((sum, run) => sum + run.summary.attack_success_rate, 0) / completed.length) * 100) : 0;
+  const completed = runs.filter((run) => run.status === "completed" && run.summary);
+  const attackRate = completed.length ? Math.round((completed.reduce((sum, run) => sum + (run.summary?.attack_success_rate ?? 0), 0) / completed.length) * 100) : 0;
 
   return (
     <>
@@ -53,7 +53,7 @@ export function DashboardClient() {
         <div className="stack">
           <div className="panel">
             <div className="panel-header"><div><h2>Recent evaluation runs</h2><p>Live scan status and evidence-backed outcomes</p></div><Link className="panel-link" href="/runs">View all →</Link></div>
-            {runs.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>Run</th><th>Status</th><th>Attempts</th><th>Executed</th><th>Blocked</th><th>Started</th></tr></thead><tbody>{runs.map((run) => <tr key={run.run_id}><td><Link className="primary-cell" href={`/runs/${run.run_id}`}><span className="row-icon">⌁</span><span><strong>{shortId(run.run_id)}</strong><small>{run.defense_id ? "defended replay" : "baseline evaluation"}</small></span></Link></td><td><StatusBadge status={run.status} /></td><td>{run.summary.total_attempts}</td><td>{run.summary.verified_executed_violations}</td><td>{run.summary.blocked_attempts}</td><td>{formatDate(run.created_at)}</td></tr>)}</tbody></table></div> : <EmptyState title="No scans yet" body="Launch the built-in controlled suite to produce your first evidence-backed assessment." action={<button className="button button-primary" onClick={() => setShowLauncher(true)}>Start first scan</button>} />}
+            {runs.length ? <div className="table-wrap"><table className="data-table"><thead><tr><th>Run</th><th>Status</th><th>Attempts</th><th>Executed</th><th>Blocked</th><th>Started</th></tr></thead><tbody>{runs.map((run) => <tr key={run.run_id}><td><Link className="primary-cell" href={`/runs/${run.run_id}`}><span className="row-icon">⌁</span><span><strong>{shortId(run.run_id)}</strong><small>{run.defense_id ? "defended replay" : "baseline evaluation"}</small></span></Link></td><td><StatusBadge status={run.status} /></td><td>{run.summary?.total_attempts ?? "—"}</td><td>{run.summary?.verified_executed_violations ?? "—"}</td><td>{run.summary?.blocked_attempts ?? "—"}</td><td>{formatDate(run.created_at)}</td></tr>)}</tbody></table></div> : <EmptyState title="No scans yet" body="Launch the built-in controlled suite to produce your first evidence-backed assessment." action={<button className="button button-primary" onClick={() => setShowLauncher(true)}>Start first scan</button>} />}
           </div>
           <div className="panel"><div className="panel-header"><div><h2>Evaluation coverage</h2><p>Current built-in suite by attack surface</p></div></div><div style={{ padding: 18 }}><div className="risk-bar"><div className="risk-fill" style={{ width: suite ? "100%" : "0%" }} /></div><div className="risk-scale"><span>Email injection</span><span>RAG poisoning</span><span>Tool output</span></div><div className="config-list" style={{ marginTop: 12 }}>{suite?.cases.map((testCase) => <div className="config-row" key={testCase.case_id}><span>{testCase.name}</span><strong>{testCase.attack_surface.replace("_", " ")}</strong></div>)}</div></div></div>
         </div>

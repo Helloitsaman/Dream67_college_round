@@ -74,16 +74,20 @@ export type RunSummary = {
 
 export type Run = {
   run_id: string;
-  agent_id: string;
-  suite_id: string;
-  policy_set_id: string;
+  agent_id?: string;
+  suite_id?: string;
+  policy_set_id?: string;
+  // Compatibility fields retained by runs written by the prototype backend.
+  model?: string;
+  scenario?: string;
   defense_id?: string | null;
   status: RunStatus;
-  created_at: string;
+  created_at?: string;
   started_at?: string | null;
   completed_at?: string | null;
-  model_config_snapshot: Record<string, unknown>;
-  summary: RunSummary;
+  model_config_snapshot?: Record<string, unknown> | null;
+  // Queued and legacy records may not have computed metrics yet.
+  summary?: RunSummary | null;
   error?: string | null;
 };
 
@@ -147,4 +151,3 @@ export type Health = {
   network_mode: string;
   warning?: string | null;
 };
-
