@@ -78,6 +78,53 @@ export default function Home() {
     }
   }
 
+  async function runRealScan() {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/real/scan`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_mode: mode,
+            scenario: "injection",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        let message = `HTTP ${response.status}`;
+
+        try {
+          const errorData = await response.json();
+          message = errorData.detail ?? message;
+        } catch {
+          // Use the HTTP status if no JSON body is available.
+        }
+
+        throw new Error(message);
+      }
+
+      const data: ScanResult = await response.json();
+      setResult(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Real AI scan failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
   return (
     <main className="min-h-screen bg-slate-950 text-white p-6 md:p-12">
       <div className="mx-auto max-w-5xl space-y-8">
@@ -135,7 +182,13 @@ export default function Home() {
           >
             {loading ? "Running Scan..." : "Run Security Scan"}
           </button>
-
+          <button
+            onClick={runRealScan}
+            disabled={loading}
+            className="rounded-lg border border-cyan-500 px-6 py-3 font-semibold text-cyan-300 hover:bg-cyan-950 disabled:opacity-50"
+          >
+            {loading ? "Testing AI Agent..." : "Run Real AI Scan"}
+          </button>
           {error && (
             <div
               role="alert"
@@ -164,8 +217,8 @@ export default function Home() {
                 </p>
                 <p
                   className={`mt-2 text-xl font-bold ${result.attack_success
-                      ? "text-red-400"
-                      : "text-emerald-400"
+                    ? "text-red-400"
+                    : "text-emerald-400"
                     }`}
                 >
                   {result.attack_success
