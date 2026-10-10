@@ -1,4 +1,1 @@
-fastapi
-uvicorn
-pymongo
-python-dotenv
+-r backend/requirements.txt

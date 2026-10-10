@@ -1,38 +1,23 @@
-# AgentBreak - FastAPI + MongoDB Atlas Backend
+# AgentBreak backend
 
-Backend API powered by FastAPI and MongoDB Atlas.
+The backend owns security policy, sandbox execution, oracle classification, scan orchestration, MongoDB access, replay, and reporting. The frontend is never trusted to write evaluation results.
 
-## Setup & Running
+Run from the repository root:
 
-1. Ensure Python virtual environment is activated:
-   ```powershell
-   # If from project root:
-   .\.venv\Scripts\Activate.ps1
-   ```
+```powershell
+$env:PYTHONPATH="backend"
+$env:STORAGE_BACKEND="memory" # or configure MONGODB_URI
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-2. Install dependencies:
-   ```powershell
-   pip install -r requirements.txt
-   ```
+All `/v1/*` endpoints require the bearer value in `BACKEND_SERVICE_TOKEN`. `/health` is intentionally unauthenticated for local/container readiness checks.
 
-3. Ensure `.env` is configured with your MongoDB Atlas connection string:
-   ```env
-   MONGODB_URI=mongodb+srv://...
-   DB_NAME=AgentBreak
-   COLLECTION_NAME=items
-   PORT=8000
-   CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-   ```
+The default `deterministic/mock-v1` target makes security outcomes repeatable without an LLM key. `openrouter_client.py` and the earlier demonstration routes remain as reference code but are not mounted by the production application.
 
-4. Run the API server:
-   ```powershell
-   python main.py
-   ```
+Run tests:
 
-## Endpoints
-
-- `GET  /` - Service info
-- `GET  /health` - MongoDB connection ping and collection stats
-- `POST /items` - Insert a document into MongoDB
-- `GET  /items` - List recent documents from MongoDB
-- `GET  /docs` - Interactive Swagger documentation
+```powershell
+$env:PYTHONPATH="backend"
+$env:STORAGE_BACKEND="memory"
+python -m unittest discover -s backend/tests -v
+```

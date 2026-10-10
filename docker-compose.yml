@@ -1,0 +1,69 @@
+name: agentbreak
+
+services:
+  mongodb:
+    image: mongo:8.0
+    restart: unless-stopped
+    command: ["mongod", "--bind_ip_all"]
+    volumes:
+      - agentbreak-mongodb:/data/db
+    networks: [agentbreak-internal]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 4s
+      retries: 15
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks: [agentbreak-internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_DB: agentbreak
+      STORAGE_BACKEND: mongodb
+      BACKEND_SERVICE_TOKEN: ${BACKEND_SERVICE_TOKEN:-dev-agentbreak-token}
+      SIMULATOR_NETWORK_MODE: offline
+      MAX_ATTEMPTS_PER_CASE: 10
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks: [agentbreak-internal]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 8s
+      timeout: 4s
+      retries: 15
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://backend:8000
+      BACKEND_SERVICE_TOKEN: ${BACKEND_SERVICE_TOKEN:-dev-agentbreak-token}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [agentbreak-internal]
+    ports:
+      - "3000:3000"
+
+networks:
+  agentbreak-internal:
+    internal: true
+
+volumes:
+  agentbreak-mongodb:
+
