@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-pure-black: #070707;
+  --bg-panel: #0e0e10;
+  --bg-elevated: #161618;
+  --yellow-primary: #ffd444;
+  --border-subtle: #242428;
+  --text-white: #ffffff;
+  --text-muted: #a1a1aa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #070707;
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-serif-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.font-cursive-italic {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Aurelius-Inspired Spacious Cards, Inputs & Buttons (#FFD444 + White Text) */
+.ab-card {
+  background-color: #0d0d0f;
+  border: 1px solid #222226;
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ab-card:hover {
+  border-color: rgba(255, 212, 68, 0.45);
+}
+
+.ab-card-active {
+  background-color: #11100c;
+  border: 1px solid #ffd444;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(255, 212, 68, 0.08);
+}
+
+.ab-btn-primary {
+  background-color: transparent;
+  color: #ffffff;
+  border: 1px solid #ffd444;
+  border-radius: 10px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 0.18s ease;
+}
+
+.ab-btn-primary:hover:not(:disabled) {
+  background-color: #ffd444;
+  color: #070707;
+  border-color: #ffd444;
+  box-shadow: 0 0 18px rgba(255, 212, 68, 0.25);
+}
+
+.ab-btn-solid {
+  background-color: #ffd444;
+  color: #070707;
+  border: 1px solid #ffd444;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: all 0.18s ease;
+}
+
+.ab-btn-solid:hover:not(:disabled) {
+  background-color: #ffe074;
+  border-color: #ffe074;
+}
+
+.ab-btn-outline {
+  background-color: #111113;
+  color: #ffffff;
+  border: 1px solid #2e2e34;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.18s ease;
+}
+
+.ab-btn-outline:hover:not(:disabled) {
+  border-color: #ffd444;
+  color: #ffd444;
+  background-color: #161510;
+}
+
+.ab-input {
+  background-color: #111114;
+  color: #ffffff;
+  border: 1px solid #2b2b30;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ab-input:focus {
+  border-color: #ffd444;
+  box-shadow: 0 0 0 2px rgba(255, 212, 68, 0.15);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070707;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ffd444;
+}
