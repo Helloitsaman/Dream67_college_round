@@ -163,6 +163,7 @@ class TraceEvent(BaseModel):
     policy_decision: str | None = None
     policy_ids: list[str] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=utc_now)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class OracleResult(BaseModel):

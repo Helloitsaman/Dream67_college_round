@@ -4,7 +4,7 @@ import asyncio
 import unittest
 
 from app.db.store import InMemoryStore
-from app.models import AttackRun, OracleOutcome, PolicySet, RunStatus, ToolRequest
+from app.models import AttackRun, OracleOutcome, PolicySet, RunStatus, ToolRequest, TraceEvent
 from app.services.fixtures import fixture_catalog
 from app.services.oracle import evaluate
 from app.services.policies import authorize
@@ -60,6 +60,21 @@ class PolicyAndSandboxTests(unittest.TestCase):
         )
         self.assertFalse(result.executed)
         self.assertIn("outbound network", result.result["reason"])
+
+    def test_trace_events_include_mongodb_required_created_at(self) -> None:
+        event = TraceEvent(
+            event_id="event-test",
+            run_id="run-test",
+            attempt_id="attempt-test",
+            sequence=1,
+            type="attempt_started",
+            source="runner",
+            message="Test event",
+        )
+
+        document = event.model_dump(mode="json")
+        self.assertIn("timestamp", document)
+        self.assertIn("created_at", document)
 
 
 class RunnerTests(unittest.TestCase):
