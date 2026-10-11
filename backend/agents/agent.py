@@ -15,12 +15,15 @@ class Message:
     role: str  # "system" | "user" | "assistant" | "tool"
     content: str
     name: str | None = None  # tool name for role == "tool"
+    tool_call_id: str | None = None  # links a "tool" message to the call that produced it
+    tool_calls: list["ToolCall"] = field(default_factory=list)  # set on assistant messages
 
 
 @dataclass
 class ToolCall:
     name: str
     args: dict[str, Any] = field(default_factory=dict)
+    id: str | None = None  # provider-assigned call id, if any
 
 
 @dataclass
@@ -28,6 +31,10 @@ class Tool:
     name: str
     description: str
     func: Callable[..., Any]
+    # JSON Schema for the arguments, sent to the LLM so it knows how to call the tool
+    parameters: dict[str, Any] = field(
+        default_factory=lambda: {"type": "object", "properties": {}}
+    )
 
 
 @dataclass
@@ -65,13 +72,18 @@ class Agent:
 
         for _ in range(self.max_steps):
             reply, requested = self._call_model(self._build_context())
-            self.memory.append(Message("assistant", reply))
+            self.memory.append(Message("assistant", reply, tool_calls=list(requested)))
             if not requested:
                 break
             for call in requested:
                 executed.append(call)
                 self.memory.append(
-                    Message("tool", str(self._execute_tool(call)), name=call.name)
+                    Message(
+                        "tool",
+                        str(self._execute_tool(call)),
+                        name=call.name,
+                        tool_call_id=call.id,
+                    )
                 )
 
         return AgentResponse(reply=reply, tool_calls=executed, trace=list(self.memory))
