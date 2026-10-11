@@ -151,3 +151,93 @@ export type Health = {
   network_mode: string;
   warning?: string | null;
 };
+
+export type AgentIntegration = {
+  integration_id: string;
+  name: string;
+  adapter_type: "http_v1";
+  endpoint: string;
+  protocol_version: "1.0";
+  capabilities: string[];
+  tool_names: string[];
+  enabled: boolean;
+  health_status: string;
+  created_at: string;
+};
+
+export type Phase2Verdict =
+  | "EXECUTED_VIOLATION"
+  | "BLOCKED_ATTEMPT"
+  | "NO_VIOLATION_OBSERVED"
+  | "INCONCLUSIVE";
+
+export type CampaignSummary = {
+  total_attempts: number;
+  executed_violations: number;
+  blocked_attempts: number;
+  no_violation_attempts: number;
+  inconclusive_attempts: number;
+};
+
+export type Campaign = {
+  campaign_id: string;
+  integration_id: string;
+  scenario_id: "document_injection_01";
+  max_attempts: number;
+  control_mode: "vulnerable" | "protected" | "benign";
+  status: RunStatus;
+  attacker_provider: string;
+  attacker_model: string;
+  created_at: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  summary: CampaignSummary;
+  error?: string | null;
+};
+
+export type VerificationResult = {
+  verification_id: string;
+  campaign_id: string;
+  attempt_id: string;
+  policy_id: string;
+  policy_version: number;
+  oracle_version: string;
+  verdict: Phase2Verdict;
+  proposed_forbidden_action: boolean;
+  executed_forbidden_action: boolean;
+  protected_data_disclosed: boolean;
+  evidence_complete: boolean;
+  evidence_event_ids: string[];
+  outbox_message_ids: string[];
+  explanation: string;
+  verified_at: string;
+};
+
+export type CampaignAttempt = {
+  attempt_id: string;
+  campaign_id: string;
+  attempt_number: number;
+  parent_attempt_id?: string | null;
+  feedback_source_attempt_id?: string | null;
+  feedback_digest?: string | null;
+  payload_text: string;
+  payload_sha256: string;
+  variation_summary: string;
+  status: "running" | "completed" | "failed" | "cancelled";
+  started_at: string;
+  ended_at?: string | null;
+  error?: string | null;
+  verification?: VerificationResult | null;
+};
+
+export type TrustedToolEvent = {
+  event_id: string;
+  campaign_id: string;
+  attempt_id: string;
+  run_id: string;
+  event_type: string;
+  source: string;
+  timestamp: string;
+  tool_name?: string | null;
+  details: Record<string, unknown>;
+};

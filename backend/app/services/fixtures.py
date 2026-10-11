@@ -6,6 +6,7 @@ from app.models import (
     AgentDefinition,
     Defense,
     Payload,
+    Phase2Scenario,
     PolicyRule,
     PolicySet,
     TestCase,
@@ -258,5 +259,6 @@ def seed_documents() -> dict[str, list[dict[str, Any]]]:
         "test_suites": [suite.model_dump(mode="json")],
         "payloads": [item.model_dump(mode="json") for item in payloads],
         "defenses": [defense.model_dump(mode="json")],
+        "phase2_scenarios": [Phase2Scenario().model_dump(mode="json")],
     }
 

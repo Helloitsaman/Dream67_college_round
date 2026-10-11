@@ -35,14 +35,51 @@ services:
       BACKEND_SERVICE_TOKEN: ${BACKEND_SERVICE_TOKEN:-dev-agentbreak-token}
       SIMULATOR_NETWORK_MODE: offline
       MAX_ATTEMPTS_PER_CASE: 10
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6.1-sol}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-60}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      ATTACK_LLM_PROVIDER: ${ATTACK_LLM_PROVIDER:-auto}
+      TEST_AGENT_SERVICE_TOKEN: ${TEST_AGENT_SERVICE_TOKEN:-dev-phase2-agent-token}
+      ALLOWED_TEST_AGENT_ENDPOINTS: http://external-test-agent:8090
+      TEST_AGENT_TIMEOUT_SECONDS: 20
     depends_on:
       mongodb:
         condition: service_healthy
-    networks: [agentbreak-internal]
+      external-test-agent:
+        condition: service_healthy
+    networks: [agentbreak-internal, agentbreak-egress]
     ports:
       - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 8s
+      timeout: 4s
+      retries: 15
+
+  external-test-agent:
+    build: ./external_test_agent
+    restart: unless-stopped
+    environment:
+      TEST_AGENT_SERVICE_TOKEN: ${TEST_AGENT_SERVICE_TOKEN:-dev-phase2-agent-token}
+      TARGET_LLM_PROVIDER: ${TARGET_LLM_PROVIDER:-auto}
+      TARGET_LLM_MODEL: ${TARGET_LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-6.1-sol}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-60}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-google/gemini-2.5-flash-lite}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_TIMEOUT: 60
+    networks: [agentbreak-internal, agentbreak-egress]
+    ports:
+      - "127.0.0.1:8090:8090"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health')"]
       interval: 8s
       timeout: 4s
       retries: 15
@@ -63,6 +100,7 @@ services:
 networks:
   agentbreak-internal:
     internal: true
+  agentbreak-egress:
 
 volumes:
   agentbreak-mongodb:

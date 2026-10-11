@@ -16,7 +16,7 @@ async def main() -> None:
     store = MongoDocumentStore(settings)
     try:
         await store.ping()
-        required = {"agents": 1, "tools": 7, "policy_sets": 1, "test_cases": 4, "test_suites": 1, "payloads": 3, "defenses": 1}
+        required = {"agents": 1, "tools": 7, "policy_sets": 1, "test_cases": 4, "test_suites": 1, "payloads": 3, "defenses": 1, "phase2_scenarios": 1}
         actual = {name: await store.count(name) for name in required}
         missing = {name: count for name, count in required.items() if actual[name] < count}
         if missing:

@@ -73,6 +73,25 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(report.status_code, 200)
         self.assertIn("AgentBreak controlled", report.text)
 
+    def test_phase2_api_rejects_unapproved_targets_and_excessive_budget(self) -> None:
+        unapproved = self.client.post(
+            "/v1/agents/integrations",
+            headers=AUTH,
+            json={"name": "Unapproved", "endpoint": "http://unapproved.example.test:8090"},
+        )
+        self.assertEqual(unapproved.status_code, 422)
+        excessive = self.client.post(
+            "/v1/campaigns",
+            headers=AUTH,
+            json={
+                "integration_id": "agent-ext-missing",
+                "scenario_id": "document_injection_01",
+                "max_attempts": 6,
+                "control_mode": "vulnerable",
+            },
+        )
+        self.assertEqual(excessive.status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()

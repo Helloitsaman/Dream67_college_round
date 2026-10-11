@@ -9,6 +9,7 @@ const navigation = [
   { href: "/agents", label: "Agents", icon: "◎" },
   { href: "/suites", label: "Test suites", icon: "◇" },
   { href: "/runs", label: "Runs", icon: "▶" },
+  { href: "/campaigns", label: "Campaigns", icon: "⌁" },
   { href: "/defenses", label: "Defenses", icon: "⬡" },
 ];
 
@@ -38,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="status-dot" />
             <div><strong>Sandbox isolated</strong><small>No public side effects</small></div>
           </div>
-          <div className="version-row"><span>AgentBreak MVP</span><span>v0.1</span></div>
+          <div className="version-row"><span>AgentBreak MVP</span><span>v0.2</span></div>
         </div>
       </aside>
       <main className="main-area">

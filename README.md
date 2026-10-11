@@ -2,6 +2,8 @@
 
 AgentBreak is a controlled security evaluation lab for AI agents. The MVP tests a built-in Workplace Assistant against indirect email injection, poisoned retrieval, and malicious tool output. It records observable actions, proves synthetic side effects with a deterministic oracle, applies independent tool-policy defenses, replays attacks, and measures benign utility.
 
+Phase 2 adds a separately running test agent, an adaptive multi-attempt attacker, trusted external tool evidence, and campaign-level evaluation. OpenAI's Responses API is the preferred live reasoning provider; deterministic mocks remain available for tests.
+
 It is intentionally not a production penetration-testing tool or universal safety certification.
 
 ## What works
@@ -15,6 +17,11 @@ It is intentionally not a production penetration-testing tool or universal safet
 - Strict server-side recipient/path defense and before/after replay
 - Benign regression measurement and JSON/Markdown assessment export
 - Exact-count synthetic datasets and validation scripts
+- External-agent registration with exact endpoint allowlisting and bearer authentication
+- Adaptive campaigns with feedback lineage, a five-attempt ceiling, and early stopping
+- OpenAI Responses API integration for structured attack generation and target-agent function calling
+- Evidence-backed Phase 2 verdicts: executed, blocked, no violation observed, or inconclusive
+- Campaign list/detail UI with per-attempt evidence and feedback
 
 ## Quick start with Docker
 
@@ -25,6 +32,8 @@ docker compose up --build
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The API health endpoint is exposed only on localhost at [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health). MongoDB and Redis are on an internal Compose network and are not published.
+
+To run live Phase 2 reasoning, set `OPENAI_API_KEY` in `.env`. With no model key, Phase 2 automatically uses its deterministic mock. See [the Phase 2 runbook](docs/phase2-running.md) and [implementation report](docs/phase2-implementation-report.md).
 
 The current MVP worker is an in-process asynchronous runner. The internal Redis service is reserved for the documented RQ migration when scans need multi-process durability.
 
@@ -87,6 +96,10 @@ If your system Python is unavailable, an isolated run works with `uv run --isola
 - `backend/app/services/policies.py` — machine-evaluable authorization
 - `backend/app/services/oracle.py` — deterministic outcome classification
 - `backend/app/services/sandbox.py` — fixture-only simulated tools
+- `backend/app/services/campaign_runner.py` — adaptive external-agent campaign orchestration
+- `backend/app/services/phase2_attacker.py` — mock, OpenAI, and optional OpenRouter attackers
+- `backend/app/services/phase2_oracle.py` — independent trusted-evidence verdicts
+- `external_test_agent/app.py` — separate target service and mock-tool runtime
 - `backend/app/db/store.py` — memory/MongoDB adapters, validators, indexes
 - `frontend/src/app/api/[...path]/route.ts` — constrained BFF
 - `frontend/src/components/run-detail.tsx` — evidence trace and findings

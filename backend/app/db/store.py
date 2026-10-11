@@ -26,6 +26,12 @@ PRIMARY_KEYS = {
     "defenses": "defense_id",
     "regression_results": "regression_id",
     "reports": "report_id",
+    "agent_integrations": "integration_id",
+    "campaigns": "campaign_id",
+    "attack_attempts": "attempt_id",
+    "tool_events": "event_id",
+    "verification_results": "verification_id",
+    "phase2_scenarios": "scenario_id",
 }
 
 
@@ -163,6 +169,22 @@ INDEXES.update(
         "test_cases": [
             ([("case_id", ASCENDING)], {"unique": True, "name": "uq_case_id"}),
             ([("kind", ASCENDING), ("attack_surface", ASCENDING)], {"name": "ix_case_kind_surface"}),
+        ],
+        "campaigns": [
+            ([("campaign_id", ASCENDING)], {"unique": True, "name": "uq_campaign_id"}),
+            ([("integration_id", ASCENDING), ("created_at", DESCENDING)], {"name": "ix_campaign_integration_created"}),
+        ],
+        "attack_attempts": [
+            ([("attempt_id", ASCENDING)], {"unique": True, "name": "uq_attack_attempt_id"}),
+            ([("campaign_id", ASCENDING), ("attempt_number", ASCENDING)], {"unique": True, "name": "uq_campaign_attempt_number"}),
+        ],
+        "tool_events": [
+            ([("event_id", ASCENDING)], {"unique": True, "name": "uq_tool_event_id"}),
+            ([("attempt_id", ASCENDING), ("timestamp", ASCENDING)], {"name": "ix_tool_event_attempt_timestamp"}),
+        ],
+        "verification_results": [
+            ([("verification_id", ASCENDING)], {"unique": True, "name": "uq_verification_id"}),
+            ([("attempt_id", ASCENDING)], {"unique": True, "name": "uq_verification_attempt_id"}),
         ],
     }
 )

@@ -9,13 +9,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from app.core.security import require_service_token
 from app.db.store import DocumentStore
 from app.models import (
+    AgentIntegration,
+    AgentIntegrationCreate,
     AttackRun,
     AttackRunCreate,
+    Campaign,
+    CampaignCreate,
     RegressionCreate,
     RegressionResult,
     RunStatus,
     utc_now,
 )
+from app.services.external_agent import ExternalAgentError, HttpExternalAgentAdapter, normalize_and_validate_endpoint
 from app.services.report import build_json_report, build_markdown_report
 
 
@@ -28,6 +33,10 @@ def store_from(request: Request) -> DocumentStore:
 
 def runner_from(request: Request):
     return request.app.state.runner
+
+
+def campaign_runner_from(request: Request):
+    return request.app.state.campaign_runner
 
 
 async def _page(
@@ -50,6 +59,53 @@ async def _page(
 @router.get("/agents")
 async def list_agents(request: Request) -> dict[str, Any]:
     return await _page(store_from(request), "agents")
+
+
+@router.get("/agents/integrations")
+async def list_agent_integrations(request: Request) -> dict[str, Any]:
+    return await _page(
+        store_from(request),
+        "agent_integrations",
+        limit=100,
+        sort=[("created_at", -1)],
+    )
+
+
+@router.post("/agents/integrations", status_code=status.HTTP_201_CREATED)
+async def register_agent_integration(body: AgentIntegrationCreate, request: Request) -> dict[str, Any]:
+    settings = request.app.state.campaign_runner.settings
+    try:
+        endpoint = normalize_and_validate_endpoint(body.endpoint, settings.allowed_test_agent_endpoint_set)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    adapter = HttpExternalAgentAdapter(
+        request.app.state.http_client,
+        endpoint,
+        settings.test_agent_service_token,
+        settings.test_agent_timeout_seconds,
+    )
+    try:
+        health, capabilities = await adapter.validate()
+    except ExternalAgentError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    integration = AgentIntegration(
+        integration_id=f"agent-ext-{uuid4().hex[:16]}",
+        name=body.name,
+        endpoint=endpoint,
+        capabilities=[str(item) for item in capabilities.get("capabilities", [])],
+        tool_names=[str(item) for item in capabilities.get("tool_names", [])],
+        health_status=str(health.get("status", "unknown")),
+    )
+    await store_from(request).insert("agent_integrations", integration.model_dump(mode="json"))
+    return integration.model_dump(mode="json")
+
+
+@router.get("/agents/integrations/{integration_id}")
+async def get_agent_integration(integration_id: str, request: Request) -> dict[str, Any]:
+    integration = await store_from(request).get("agent_integrations", {"integration_id": integration_id})
+    if not integration:
+        raise HTTPException(status_code=404, detail="Agent integration not found.")
+    return integration
 
 
 @router.get("/suites")
@@ -228,4 +284,96 @@ async def get_report(
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="agentbreak-{run_id}.json"'},
     )
+
+
+@router.get("/campaigns")
+async def list_campaigns(
+    request: Request,
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
+    return await _page(
+        store_from(request),
+        "campaigns",
+        limit=limit,
+        offset=offset,
+        sort=[("created_at", -1)],
+    )
+
+
+@router.post("/campaigns", status_code=status.HTTP_202_ACCEPTED)
+async def create_campaign(body: CampaignCreate, request: Request) -> dict[str, str]:
+    store = store_from(request)
+    integration = await store.get("agent_integrations", {"integration_id": body.integration_id})
+    if not integration or not integration.get("enabled"):
+        raise HTTPException(status_code=404, detail="Enabled agent integration not found.")
+    if not await store.get("phase2_scenarios", {"scenario_id": body.scenario_id}):
+        raise HTTPException(status_code=404, detail="Phase 2 scenario not found.")
+    runner = campaign_runner_from(request)
+    campaign = Campaign(
+        campaign_id=f"campaign-{uuid4().hex[:16]}",
+        integration_id=body.integration_id,
+        scenario_id=body.scenario_id,
+        max_attempts=body.max_attempts,
+        control_mode=body.control_mode,
+        status=RunStatus.QUEUED,
+        attacker_provider=runner.attacker.provider,
+        attacker_model=runner.attacker.model_name,
+    )
+    await store.insert("campaigns", campaign.model_dump(mode="json"))
+    runner.launch(campaign.campaign_id)
+    return {"campaign_id": campaign.campaign_id, "status": campaign.status.value}
+
+
+@router.get("/campaigns/{campaign_id}")
+async def get_campaign(campaign_id: str, request: Request) -> dict[str, Any]:
+    campaign = await store_from(request).get("campaigns", {"campaign_id": campaign_id})
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    return campaign
+
+
+@router.get("/campaigns/{campaign_id}/attempts")
+async def get_campaign_attempts(campaign_id: str, request: Request) -> dict[str, Any]:
+    store = store_from(request)
+    if not await store.get("campaigns", {"campaign_id": campaign_id}):
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    attempts = await store.list(
+        "attack_attempts",
+        {"campaign_id": campaign_id},
+        sort=[("attempt_number", 1)],
+        limit=5,
+    )
+    verifications = await store.list("verification_results", {"campaign_id": campaign_id}, limit=5)
+    by_attempt = {item["attempt_id"]: item for item in verifications}
+    for attempt in attempts:
+        attempt["verification"] = by_attempt.get(attempt["attempt_id"])
+    return {"items": attempts, "total": len(attempts), "limit": 5, "offset": 0}
+
+
+@router.get("/attempts/{attempt_id}/evidence")
+async def get_attempt_evidence(attempt_id: str, request: Request) -> dict[str, Any]:
+    store = store_from(request)
+    attempt = await store.get("attack_attempts", {"attempt_id": attempt_id})
+    if not attempt:
+        raise HTTPException(status_code=404, detail="Campaign attempt not found.")
+    events = await store.list(
+        "tool_events",
+        {"attempt_id": attempt_id},
+        sort=[("timestamp", 1)],
+        limit=250,
+    )
+    verification = await store.get("verification_results", {"attempt_id": attempt_id})
+    return {"attempt": attempt, "events": events, "verification": verification}
+
+
+@router.post("/campaigns/{campaign_id}/cancel", status_code=status.HTTP_202_ACCEPTED)
+async def cancel_campaign(campaign_id: str, request: Request) -> dict[str, str]:
+    campaign = await store_from(request).get("campaigns", {"campaign_id": campaign_id})
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+    if campaign["status"] in {RunStatus.COMPLETED.value, RunStatus.FAILED.value, RunStatus.CANCELLED.value}:
+        raise HTTPException(status_code=409, detail="Campaign has already finished.")
+    campaign_runner_from(request).cancel(campaign_id)
+    return {"campaign_id": campaign_id, "status": "cancellation_requested"}
 

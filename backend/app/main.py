@@ -4,6 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import Any
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 
 from app.api.v1 import router as v1_router
@@ -11,6 +12,7 @@ from app.core.config import get_settings
 from app.db.store import create_store
 from app.models import OracleOutcome, RunStatus, utc_now
 from app.services.runner import ScanRunner
+from app.services.campaign_runner import CampaignRunner
 
 
 async def _finish_regression(app: FastAPI, regression_id: str) -> None:
@@ -87,17 +89,39 @@ async def _finish_regression(app: FastAPI, regression_id: str) -> None:
 async def lifespan(app: FastAPI):
     settings = get_settings()
     store, warning = await create_store(settings)
+    timeout = httpx.Timeout(max(settings.openai_timeout_seconds, settings.openrouter_timeout_seconds), connect=10.0)
+    limits = httpx.Limits(max_connections=10, max_keepalive_connections=5)
+    http_client = httpx.AsyncClient(
+        timeout=timeout,
+        limits=limits,
+        follow_redirects=False,
+        trust_env=False,
+    )
     app.state.store = store
+    app.state.http_client = http_client
     app.state.storage_warning = warning
     app.state.runner = ScanRunner(store)
+    app.state.campaign_runner = CampaignRunner(store, http_client, settings)
     app.state.regression_tasks = {}
     app.state.create_regression_task = lambda regression_id: asyncio.create_task(
         _finish_regression(app, regression_id), name=f"agentbreak-regression-{regression_id}"
     )
+    for campaign in await store.list("campaigns", {"status": RunStatus.RUNNING.value}, limit=100):
+        await store.update(
+            "campaigns",
+            {"campaign_id": campaign["campaign_id"]},
+            {
+                "status": RunStatus.FAILED.value,
+                "completed_at": utc_now(),
+                "error": "The API restarted while this in-process campaign was running.",
+            },
+        )
     yield
     for task in list(app.state.regression_tasks.values()):
         if not task.done():
             task.cancel()
+    await app.state.campaign_runner.close()
+    await http_client.aclose()
     await store.close()
 
 
@@ -126,6 +150,7 @@ def create_app() -> FastAPI:
             "database_connected": connected,
             "worker": "in-process",
             "network_mode": get_settings().simulator_network_mode,
+            "phase2_attacker_provider": get_settings().resolved_attack_provider,
             "warning": request.app.state.storage_warning,
         }
 

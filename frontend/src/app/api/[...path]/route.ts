@@ -3,6 +3,8 @@ import { NextRequest } from "next/server";
 const GET_ROUTES = [
   /^health$/,
   /^agents$/,
+  /^agents\/integrations$/,
+  /^agents\/integrations\/[A-Za-z0-9-]+$/,
   /^suites$/,
   /^policies$/,
   /^defenses$/,
@@ -11,12 +13,19 @@ const GET_ROUTES = [
   /^runs\/[A-Za-z0-9-]+\/(events|findings)$/,
   /^regressions\/[A-Za-z0-9-]+$/,
   /^reports\/[A-Za-z0-9-]+$/,
+  /^campaigns$/,
+  /^campaigns\/[A-Za-z0-9-]+$/,
+  /^campaigns\/[A-Za-z0-9-]+\/attempts$/,
+  /^attempts\/[A-Za-z0-9-]+\/evidence$/,
 ];
 
 const POST_ROUTES = [
   /^runs$/,
   /^runs\/[A-Za-z0-9-]+\/cancel$/,
   /^regressions$/,
+  /^agents\/integrations$/,
+  /^campaigns$/,
+  /^campaigns\/[A-Za-z0-9-]+\/cancel$/,
 ];
 
 function isAllowed(method: string, path: string): boolean {
